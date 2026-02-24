@@ -1,0 +1,13 @@
+# Hysteria 2 日志轮转配置
+/var/log/hysteria/*.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 root root
+    postrotate
+        systemctl reload hysteria-server.service > /dev/null 2>&1 || true
+    endscript
+}
