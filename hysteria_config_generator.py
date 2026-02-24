@@ -61,11 +61,36 @@ def get_server_ip() -> str:
 
 
 def generate_openssl_config(ip: str, output_dir: str) -> Tuple[str, str, str]:
-    """使用 OpenSSL 生成自签名证书"""
+    """使用 OpenSSL 生成自签名证书（带 SANs）"""
     cert_path = os.path.join(output_dir, "server.crt")
     key_path = os.path.join(output_dir, "server.key")
 
     print(f"📜 正在生成自签名证书 (IP: {ip})...")
+
+    # 创建 OpenSSL 配置文件（带 SANs）
+    config_path = os.path.join(output_dir, "openssl_san.cnf")
+    with open(config_path, "w") as f:
+        f.write(f"""[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_ca
+prompt = no
+
+[req_distinguished_name]
+CN = Hysteria Server
+O = Legitimate Company
+C = US
+
+[v3_ca]
+subjectAltName = @alt_names
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+
+[alt_names]
+DNS.1 = localhost
+IP.1 = {ip}
+IP.2 = 127.0.0.1
+""")
 
     # OpenSSL 命令
     cmd = [
@@ -83,14 +108,17 @@ def generate_openssl_config(ip: str, output_dir: str) -> Tuple[str, str, str]:
         cert_path,
         "-days",
         "3650",
-        "-subj",
-        f"/CN={ip}/O=Legitimate Company/C=US",
+        "-config",
+        config_path,
     ]
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True)
         if result.returncode != 0:
             raise Exception(result.stderr)
+
+        # 删除临时配置文件
+        os.remove(config_path)
 
         # 设置权限
         os.chmod(key_path, 0o600)
@@ -113,7 +141,7 @@ def generate_openssl_config(ip: str, output_dir: str) -> Tuple[str, str, str]:
             else ""
         )
 
-        print(f"✅ 证书生成成功")
+        print(f"✅ 证书生成成功（带 SANs）")
         print(f"   证书：{cert_path}")
         print(f"   私钥：{key_path}")
         if fingerprint:
@@ -122,9 +150,13 @@ def generate_openssl_config(ip: str, output_dir: str) -> Tuple[str, str, str]:
         return cert_path, key_path, fingerprint
     except FileNotFoundError:
         print("⚠️  未找到 OpenSSL，将生成证书路径占位符")
+        if os.path.exists(config_path):
+            os.remove(config_path)
         return cert_path, key_path, ""
     except Exception as e:
         print(f"⚠️  证书生成失败：{e}")
+        if os.path.exists(config_path):
+            os.remove(config_path)
         return cert_path, key_path, ""
 
 

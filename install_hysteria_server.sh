@@ -105,17 +105,42 @@ setup_config() {
     mkdir -p /etc/hysteria
     mkdir -p /var/log/hysteria
     
-    # 生成证书
-    echo "生成自签名证书..."
+    # 生成证书（带 SANs）
+    echo "生成自签名证书（带 SANs）..."
     cd /etc/hysteria
+    
+    # 创建 OpenSSL 配置文件（带 SANs）
+    cat > /tmp/openssl_san.cnf << 'OPENEOL'
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_ca
+prompt = no
+
+[req_distinguished_name]
+CN = Hysteria Server
+O = Legitimate Company
+C = US
+
+[v3_ca]
+subjectAltName = @alt_names
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+
+[alt_names]
+DNS.1 = localhost
+IP.1 = 127.0.0.1
+OPENEOL
+    
     openssl req -x509 -nodes -newkey ec:<(openssl ecparam -name prime256v1) \
         -keyout server.key \
         -out server.crt \
         -days 3650 \
-        -subj "/CN=Hysteria Server/O=Legitimate Company/C=US"
+        -config /tmp/openssl_san.cnf
     
     chmod 600 server.key
     chmod 644 server.crt
+    rm -f /tmp/openssl_san.cnf
     
     echo -e "${GREEN}证书生成完成${NC}"
     echo "  证书：/etc/hysteria/server.crt"
