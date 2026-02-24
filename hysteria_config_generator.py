@@ -60,7 +60,7 @@ def get_server_ip() -> str:
         return "YOUR_SERVER_IP"
 
 
-def generate_openssl_config(ip: str, output_dir: str) -> Tuple[str, str]:
+def generate_openssl_config(ip: str, output_dir: str) -> Tuple[str, str, str]:
     """使用 OpenSSL 生成自签名证书"""
     cert_path = os.path.join(output_dir, "server.crt")
     key_path = os.path.join(output_dir, "server.key")
@@ -197,30 +197,19 @@ sniff:
   tcpPorts: "80,443,8080,8443"
   udpPorts: "443"
 
-# ==================== ACL 访问控制（必选） ====================
+# ==================== ACL 访问控制 ====================
 acl:
   inline:
-    # 阻止私有网络
     - reject(10.0.0.0/8)
     - reject(172.16.0.0/12)
     - reject(192.168.0.0/16)
     - reject(127.0.0.0/8)
-    
-    # 阻止常见恶意端口
-    - reject(0.0.0.0/0:22)
-    - reject(0.0.0.0/0:23)
-    - reject(0.0.0.0/0:3389)
-    - reject(0.0.0.0/0:445)
-    - reject(0.0.0.0/0:135)
-    - reject(0.0.0.0/0:139)
-    
-    # 允许常用端口
-    - direct(0.0.0.0/0:80)
-    - direct(0.0.0.0/0:443)
-    - direct(0.0.0.0/0:8080)
-    - direct(0.0.0.0/0:8443)
-    
-    # 默认规则
+    - reject(all, tcp/22)
+    - reject(all, tcp/23)
+    - reject(all, tcp/3389)
+    - reject(all, tcp/445)
+    - direct(all, tcp/80)
+    - direct(all, tcp/443)
     - default(direct)
 
 # ==================== 出站配置 ====================
@@ -267,7 +256,7 @@ def generate_linux_client_config(
     server_port: int,
     obfs_password: str,
     auth_password: str,
-    cert_fingerprint: str,
+    cert_path: str,
     output_path: str,
 ) -> str:
     """生成 Linux 客户端配置"""
@@ -275,11 +264,17 @@ def generate_linux_client_config(
     config = f'''# ============================================
 # Hysteria 2 Linux 客户端配置
 # 生成时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+# 安全配置：使用 CA 证书验证
 # ============================================
 
 server: {server_ip}:{server_port}
 
 auth: "{auth_password}"
+
+transport:
+  type: udp
+  udp:
+    hopInterval: 30s
 
 obfs:
   type: salamander
@@ -287,10 +282,7 @@ obfs:
     password: "{obfs_password}"
 
 tls:
-  insecure: true
-  # 如需固定证书指纹（更安全），取消下面注释并填入指纹：
-  # insecure: false
-  # pinSHA256: "{cert_fingerprint}"
+  ca: {cert_path}  # CA 证书路径
 
 bandwidth:
   up: 50 mbps
@@ -500,7 +492,7 @@ def main():
         server_port=args.port,
         obfs_password=obfs_password,
         auth_password=auth_password,
-        cert_fingerprint=cert_fingerprint,
+        cert_path=cert_path,
         output_path=linux_config_path,
     )
 

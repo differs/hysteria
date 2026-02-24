@@ -1,0 +1,45 @@
+# ============================================
+# Hysteria 2 Linux 客户端配置
+# 生成时间：2026-02-24 21:40:38
+# 安全配置：使用 CA 证书验证
+# ============================================
+
+server: 127.0.0.1:18443
+
+auth: "H3*hzl!FJMLEefZI!Kg&ah@TrY&jc#Qx"
+
+transport:
+  type: udp
+  udp:
+    hopInterval: 30s
+
+obfs:
+  type: salamander
+  salamander:
+    password: "4baIx!ZJvVAr@uDhEZT4srR@FZfc7eBZ"
+
+tls:
+  ca: /home/de/works/hysteria/hysteria_configs/server.crt  # CA 证书路径
+
+bandwidth:
+  up: 50 mbps
+  down: 100 mbps
+
+# SOCKS5 代理
+socks5:
+  listen: 127.0.0.1:1080
+
+# HTTP 代理
+http:
+  listen: 127.0.0.1:8080
+
+# 可选：TCP 端口转发
+# tcpForwarding:
+#   - listen: 127.0.0.1:8888
+#     remote: example.com:443
+
+# 可选：UDP 端口转发
+# udpForwarding:
+#   - listen: 127.0.0.1:5353
+#     remote: 8.8.8.8:53
+#     timeout: 30s

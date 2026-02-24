@@ -1,0 +1,102 @@
+# ============================================
+# Hysteria 2 服务端配置
+# 生成时间：2026-02-24 21:40:38
+# 所有安全功能已启用，无需域名
+# ============================================
+
+# ==================== 监听配置 ====================
+listen: :18443
+
+# ==================== Salamander 混淆 ====================
+obfs:
+  type: salamander
+  salamander:
+    password: "4baIx!ZJvVAr@uDhEZT4srR@FZfc7eBZ"
+
+# ==================== TLS 证书（自签名） ====================
+tls:
+  cert: /home/de/works/hysteria/hysteria_configs/server.crt
+  key: /home/de/works/hysteria/hysteria_configs/server.key
+  sniGuard: strict
+  clientCA: ""
+
+# ==================== QUIC 协议优化 ====================
+quic:
+  initStreamReceiveWindow: 8388608
+  maxStreamReceiveWindow: 8388608
+  initConnReceiveWindow: 8388608
+  maxConnReceiveWindow: 8388608
+  maxIdleTimeout: 30s
+  maxIncomingStreams: 1024
+  disablePathMTUDiscovery: false
+
+# ==================== 带宽限制 ====================
+bandwidth:
+  up: 100 mbps
+  down: 100 mbps
+
+# ==================== 认证配置 ====================
+auth:
+  type: password
+  password: "H3*hzl!FJMLEefZI!Kg&ah@TrY&jc#Qx"
+
+# ==================== DNS 解析器 ====================
+resolver:
+  type: udp
+  udp:
+    addr: 1.1.1.1:53
+    timeout: 2s
+
+# ==================== 协议嗅探（必选） ====================
+sniff:
+  enable: true
+  timeout: 1s
+  rewriteDomain: false
+  tcpPorts: "80,443,8080,8443"
+  udpPorts: "443"
+
+# ==================== ACL 访问控制 ====================
+acl:
+  inline:
+    - reject(10.0.0.0/8)
+    - reject(172.16.0.0/12)
+    - reject(192.168.0.0/16)
+    - reject(127.0.0.0/8)
+    - reject(all, tcp/22)
+    - reject(all, tcp/23)
+    - reject(all, tcp/3389)
+    - reject(all, tcp/445)
+    - direct(all, tcp/80)
+    - direct(all, tcp/443)
+    - default(direct)
+
+# ==================== 出站配置 ====================
+outbounds:
+  - name: direct
+    type: direct
+    direct:
+      mode: auto
+      fastOpen: true
+
+# ==================== UDP 配置 ====================
+disableUDP: false
+udpIdleTimeout: 30s
+
+# ==================== 伪装网站（必选） ====================
+masquerade:
+  type: proxy
+  proxy:
+    url: https://www.visa.com
+    rewriteHost: true
+    insecure: false
+  listenHTTP: :80
+  listenHTTPS: :18443
+  forceHTTPS: true
+
+# ==================== 流量统计 ====================
+trafficStats:
+  listen: 127.0.0.1:9999
+  secret: "y8^6^q1Bm71!%v%@ufutGeWq"
+
+# ==================== 速度测试 ====================
+speedTest: false

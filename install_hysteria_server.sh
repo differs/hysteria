@@ -197,16 +197,12 @@ acl:
     - reject(172.16.0.0/12)
     - reject(192.168.0.0/16)
     - reject(127.0.0.0/8)
-    - reject(0.0.0.0/0:22)
-    - reject(0.0.0.0/0:23)
-    - reject(0.0.0.0/0:3389)
-    - reject(0.0.0.0/0:445)
-    - reject(0.0.0.0/0:135)
-    - reject(0.0.0.0/0:139)
-    - direct(0.0.0.0/0:80)
-    - direct(0.0.0.0/0:443)
-    - direct(0.0.0.0/0:8080)
-    - direct(0.0.0.0/0:8443)
+    - reject(all, tcp/22)
+    - reject(all, tcp/23)
+    - reject(all, tcp/3389)
+    - reject(all, tcp/445)
+    - direct(all, tcp/80)
+    - direct(all, tcp/443)
     - default(direct)
 
 outbounds:
@@ -256,7 +252,7 @@ ${STATS_SECRET}
 证书指纹 (SHA256):
 ${FINGERPRINT}
 
-# 客户端配置示例：
+# 客户端配置示例（安全）：
 # server: YOUR_SERVER_IP:443
 # auth: "${AUTH_PASSWORD}"
 # obfs:
@@ -264,10 +260,13 @@ ${FINGERPRINT}
 #   salamander:
 #     password: "${OBFS_PASSWORD}"
 # tls:
-#   insecure: true
-#   # 或使用指纹：
-#   # insecure: false
-#   # pinSHA256: "${FINGERPRINT}"
+#   ca: /etc/hysteria/server.crt  # 使用 CA 证书验证（推荐）
+#   # 或 insecure: true（仅测试用，不安全）
+# bandwidth:
+#   up: 50 mbps
+#   down: 100 mbps
+# socks5:
+#   listen: 127.0.0.1:1080
 EOF
 
     chmod 600 /etc/hysteria/credentials.txt

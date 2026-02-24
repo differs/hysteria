@@ -49,16 +49,22 @@ SERVER_PORT=${SERVER_PORT_INPUT:-443}
 OUTPUT_DIR="./hysteria_client_configs"
 mkdir -p "$OUTPUT_DIR"
 
-# 生成 Linux 客户端配置
+# 生成 Linux 客户端配置（安全版）
 cat > "${OUTPUT_DIR}/client_linux.yaml" << EOF
 # ============================================
 # Hysteria 2 Linux 客户端配置
 # 生成时间：$(date '+%Y-%m-%d %H:%M:%S')
+# 安全配置：使用 CA 证书验证
 # ============================================
 
 server: ${SERVER_IP}:${SERVER_PORT}
 
 auth: "${AUTH_PASSWORD}"
+
+transport:
+  type: udp
+  udp:
+    hopInterval: 30s
 
 obfs:
   type: salamander
@@ -66,10 +72,7 @@ obfs:
     password: "${OBFS_PASSWORD}"
 
 tls:
-  insecure: true
-  # 如需固定证书指纹（更安全），取消下面注释：
-  # insecure: false
-  # pinSHA256: "${FINGERPRINT}"
+  ca: /etc/hysteria/ca.crt  # CA 证书路径
 
 bandwidth:
   up: 50 mbps
@@ -83,6 +86,29 @@ http:
 EOF
 
 echo -e "${GREEN}✅ Linux 客户端配置已生成：${OUTPUT_DIR}/client_linux.yaml${NC}"
+
+# 复制 CA 证书
+cp /etc/hysteria/server.crt "${OUTPUT_DIR}/ca.crt"
+echo -e "${GREEN}✅ CA 证书已复制：${OUTPUT_DIR}/ca.crt${NC}"
+
+# 显示使用说明
+cat > "${OUTPUT_DIR}/README.txt" << EOF
+Hysteria 2 客户端配置说明
+=====================================
+
+1. 安装 CA 证书到客户端：
+   sudo mkdir -p /etc/hysteria
+   sudo cp ca.crt /etc/hysteria/ca.crt
+
+2. 启动客户端：
+   hysteria client -c client_linux.yaml
+
+3. 配置说明：
+   - 使用 CA 证书验证，安全性高
+   - 防止中间人攻击
+   - 无需域名即可安全使用
+EOF
+echo -e "${GREEN}✅ 使用说明已生成：${OUTPUT_DIR}/README.txt${NC}"
 
 # 生成 Android 客户端配置（JSON）
 cat > "${OUTPUT_DIR}/client_android.json" << EOF
